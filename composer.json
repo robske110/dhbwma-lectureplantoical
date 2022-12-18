@@ -1,0 +1,20 @@
+{
+    "name": "robske_110/dhbwma-lectureplantoical",
+    "type": "project",
+    "license": "GPLv3",
+    "autoload": {
+        "psr-4": {
+            "robske_110\\dhbwma\\lectureplantoical\\": "src/lectureplantoical"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "amphp/amp": "^2.6",
+        "eluceo/ical": "^2.7",
+        "robske110/logger": "^0.3.2",
+        "amphp/http-server": "^2.1",
+        "amphp/http-server-router": "^1.0",
+        "ext-dom": "*",
+        "ext-pcntl": "*"
+    }
+}
