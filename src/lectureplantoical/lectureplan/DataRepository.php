@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace robske_110\dhbwma\lectureplantoical\lectureplan;
 
-use DateInterval;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -40,17 +39,51 @@ class DataRepository{
 	 * @param DateTimeImmutable $start
 	 * @param DateTimeImmutable $end
 	 *
-	 * Limitations: cannot fetch a range larger than a year, Does not properly handle events with no times
+	 * Limitations: Does not properly handle events with no times
 	 *
 	 * @return Lecture[]
 	 */
 	public function getLecturesForCourseBetween(string $courseName, DateTimeInterface $start, DateTimeInterface $end): array{
 		Logger::log("getLecturesForCourseBetween($courseName,".$start->format(DATE_ISO8601).",".$end->format(DATE_ISO8601).")");
 		if($start > $end){
-			Logger::warning("Incorrect start, end order for getLecturesForCourseBetween!");
-			return []; //TODO: throw Exception
+			throw new RuntimeException("Could not find course ".$courseName);
 		}
 		
+		$lectures = $this->fetchLecturesByMonthForCourse($courseName, $start, $end);
+		
+		Logger::debug("LPDR DONE");
+		Logger::var_dump($lectures, "lectures");
+		
+		return $lectures;
+	}
+	
+	private function fetchLecturesByMonthForCourse(string $courseName, DateTimeInterface $start, DateTimeInterface $end): array{
+		$monthsToFetch = [];
+		// calculate months to be fetched
+		for($y = (int) $start->format("Y"); $y <= (int) $end->format("Y"); ++$y){
+			for($m = ($y === (int) $start->format("Y") ? (int) $start->format("n") : 1); $m <= ($y === (int) $end->format("Y") ? (int) $end->format("n") : 12); ++$m){
+				$monthsToFetch[] = [$m, $y];
+				echo($m."@".$y.PHP_EOL);
+			}
+		}
+		Logger::var_dump($monthsToFetch, "LPDR monthsToFetch");
+		
+		$courseUId = $this->getFullCourseList()[$courseName] ?? null;
+		if($courseUId === null){
+			throw new RuntimeException("Could not find ...");
+		}
+		Logger::var_dump($courseUId, "LPDR courseUId");
+		
+		$lectures = [];
+		foreach($monthsToFetch as [$monthToFetch, $year]){
+			$month = (new DateTime())->setDate($year, $monthToFetch, 0)->setTime(0,0);
+			$lectures = array_merge($lectures, MonthParser::getLectures($courseUId, $month->getTimestamp()));
+		}
+		
+		return $lectures;
+	}
+	
+	private function fetchLecturesByWeekForCourse(string $courseName, DateTimeInterface $start, DateTimeInterface $end): array{
 		$weeksToFetch = [];
 		
 		// calculate weeks to be fetched
