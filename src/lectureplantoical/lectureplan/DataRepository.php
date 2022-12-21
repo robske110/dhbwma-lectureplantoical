@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace robske_110\dhbwma\lectureplantoical\lectureplan;
 
+use DateInterval;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
@@ -45,24 +46,19 @@ class DataRepository{
 	 */
 	public function getLecturesForCourseBetween(string $courseName, DateTimeInterface $start, DateTimeInterface $end): array{
 		Logger::log("getLecturesForCourseBetween($courseName,".$start->format(DATE_ISO8601).",".$end->format(DATE_ISO8601).")");
-		//is all week data between start and end fetched?
-		$kwStart = (int) $start->format('W');
-		$kwEnd = (int) $end->format('W');
+		if($start > $end){
+			Logger::warning("Incorrect start, end order for getLecturesForCourseBetween!");
+			return []; //TODO: throw Exception
+		}
 		
 		$weeksToFetch = [];
 		
 		// calculate weeks to be fetched
-		if($kwStart > $kwEnd){
-			foreach(range($kwStart, 53) as $week){
-				$weeksToFetch[] = [$week, (int) $start->format("Y")];
-			}
-			foreach(range(1, $kwEnd) as $week){
-				$weeksToFetch[] = [$week, (int) $end->format("Y")];
-			}
-		}else{
-			foreach(range($kwStart, $kwEnd) as $week){
-				$weeksToFetch[] = [$week, (int) $start->format("Y")];
-			}
+		$startMutable = DateTime::createFromInterface($start);
+		$week = new DateInterval("P7D");
+		while($startMutable < $end){
+			$weeksToFetch[] = [(int) $startMutable->format("W"), (int) $startMutable->format("Y")];
+			$startMutable->add($week);
 		}
 		Logger::var_dump($weeksToFetch, "LPDR weeksToFetch");
 		
@@ -74,7 +70,6 @@ class DataRepository{
 		
 		$lectures = [];
 		foreach($weeksToFetch as [$weekToFetch, $year]){
-			//delete old data
 			$week = (new DateTime())->setISODate($year, $weekToFetch);
 			if($weekToFetch === (int) $week->format("W")){ //check if week really exists
 				$lectures = array_merge($lectures, WeekParser::getLectures($courseUId, $week->getTimestamp()));
