@@ -31,9 +31,8 @@ class HttpServer{
 		$this->server = new AmpHttpServer($sockets, $this->buildRouter(), new PSRLogger);
 	}
 	
-	public function start(){
+	public function start(): void{
 		call(function(){
-			var_dump($this->server->getState());
 			yield $this->server->start();
 		});
 	}
@@ -59,11 +58,15 @@ class HttpServer{
 						(new DateTimeImmutable())->add(DEFAULT_DATE_RANGE)
 				);
 			}catch(Exception $e){
-				return new Response(
-					Status::BAD_REQUEST,
-					["Access-Control-Allow-Origin" => "*"],
-					"Fail"
-				);
+				if(str_contains($e->getMessage(), "Failed to parse time string")){
+					return new Response(
+						Status::BAD_REQUEST,
+						["Access-Control-Allow-Origin" => "*"],
+						"Incorrect start / end parameter: ".$e->getMessage()
+					);
+				}else{
+					throw $e;
+				}
 			}
 			
 			return new Response(

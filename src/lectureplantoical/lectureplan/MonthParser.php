@@ -3,10 +3,6 @@ declare(strict_types=1);
 
 namespace robske_110\dhbwma\lectureplantoical\lectureplan;
 
-use Amp\Http\Client\Connection\UnlimitedConnectionPool;
-use Amp\Http\Client\HttpClient;
-use Amp\Http\Client\HttpClientBuilder;
-use Amp\Http\Client\Request;
 use Amp\Promise;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -14,13 +10,9 @@ use DOMDocument;
 use DOMXPath;
 use Generator;
 use robske_110\dhbwma\lectureplantoical\lectureplan\representation\Lecture;
-use robske_110\Logger\Logger;
 use function Amp\call;
 
 abstract class MonthParser{
-	private static HttpClient $httpClient;
-	private static UnlimitedConnectionPool $pool;
-	
 	/**
 	 * Retrieves all the lectures for a given UId and a specified month
 	 * @param int $uId The UId for which all lectures shall be returned
@@ -28,11 +20,6 @@ abstract class MonthParser{
 	 * @return Promise<Lecture[]> Contains the Lecture objects for the parsed month
 	 */
 	public static function getLectures(int $uId, int $uTime): Promise{
-		if(!isset(self::$httpClient)){
-			self::$pool = new UnlimitedConnectionPool;
-			self::$httpClient = (new HttpClientBuilder)->usingPool(self::$pool)->build();
-		}
-		
 		return call(self::_getLectures(...), $uId, $uTime);
 	}
 	
@@ -40,17 +27,14 @@ abstract class MonthParser{
 		$dom = new DOMDocument();
 		$dom->strictErrorChecking = false;
 		// the gId is not needed to fetch the lecture plan for a course
-		$response = yield self::$httpClient->request(new Request(
-			"https://vorlesungsplan.dhbw-mannheim.de/index.php?".http_build_query([
+		$lecturePlan = yield HttpClient::get(
+			HttpClient::LECTURE_PLAN_BASE_URL."?".http_build_query([
 				"action" => "view",
 				"uid" => $uId,
 				"date" => $uTime,
 				"view" => "month"
 			])
-		));
-		Logger::debug("connAttempts: ".self::$pool->getTotalConnectionAttempts()." streamREQs: ".self::$pool->getTotalStreamRequests()." openConns: ".self::$pool->getOpenConnectionCount());
-		
-		$lecturePlan = yield $response->getBody()->buffer();
+		);
 		@$dom->loadHTML($lecturePlan);
 		$xpath = new DomXPath($dom);
 		
