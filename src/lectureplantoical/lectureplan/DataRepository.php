@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace robske_110\dhbwma\lectureplantoical\lectureplan;
 
+use Amp\Promise;
+use DateInterval;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use robske_110\dhbwma\lectureplantoical\lectureplan\representation\Lecture;
 use robske_110\Logger\Logger;
 use RuntimeException;
+use function Amp\call;
 
 class DataRepository{
 	private array $courseListCache;
@@ -41,23 +44,24 @@ class DataRepository{
 	 *
 	 * Limitations: Does not properly handle events with no times
 	 *
-	 * @return Lecture[]
+	 * @return Promise<Lecture[]>
 	 */
-	public function getLecturesForCourseBetween(string $courseName, DateTimeInterface $start, DateTimeInterface $end): array{
+	public function getLecturesForCourseBetween(string $courseName, DateTimeInterface $start, DateTimeInterface $end): Promise{
 		Logger::log("getLecturesForCourseBetween($courseName,".$start->format(DATE_ISO8601).",".$end->format(DATE_ISO8601).")");
 		if($start > $end){
 			throw new RuntimeException("Could not find course ".$courseName);
 		}
 		
-		$lectures = $this->fetchLecturesByMonthForCourse($courseName, $start, $end);
-		
-		Logger::debug("LPDR DONE");
-		Logger::var_dump($lectures, "lectures");
-		
-		return $lectures;
+		return $this->fetchLecturesByMonthForCourse($courseName, $start, $end);
 	}
 	
-	private function fetchLecturesByMonthForCourse(string $courseName, DateTimeInterface $start, DateTimeInterface $end): array{
+	/**
+	 * @param string $courseName
+	 * @param DateTimeInterface $start
+	 * @param DateTimeInterface $end
+	 * @return Promise<Lecture[]>
+	 */
+	private function fetchLecturesByMonthForCourse(string $courseName, DateTimeInterface $start, DateTimeInterface $end): Promise{
 		$monthsToFetch = [];
 		// calculate months to be fetched
 		for($y = (int) $start->format("Y"); $y <= (int) $end->format("Y"); ++$y){
@@ -74,13 +78,15 @@ class DataRepository{
 		}
 		Logger::var_dump($courseUId, "LPDR courseUId");
 		
-		$lectures = [];
-		foreach($monthsToFetch as [$monthToFetch, $year]){
-			$month = (new DateTime())->setDate($year, $monthToFetch, 0)->setTime(0,0);
-			$lectures = array_merge($lectures, MonthParser::getLectures($courseUId, $month->getTimestamp()));
-		}
 		
-		return $lectures;
+		return call(function() use ($courseUId, $monthsToFetch){
+			$lectures = [];
+			foreach($monthsToFetch as [$monthToFetch, $year]){
+				$month = (new DateTime())->setDate($year, $monthToFetch, 0)->setTime(0,0);
+				$lectures[] = yield MonthParser::getLectures($courseUId, $month->getTimestamp());
+			}
+			return array_merge(...$lectures);
+		});
 	}
 	
 	private function fetchLecturesByWeekForCourse(string $courseName, DateTimeInterface $start, DateTimeInterface $end): array{

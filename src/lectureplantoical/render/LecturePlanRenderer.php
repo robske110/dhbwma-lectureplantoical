@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace robske_110\dhbwma\lectureplantoical\render;
 
+use Amp\Promise;
 use DateTimeImmutable;
 use robske_110\dhbwma\lectureplantoical\lectureplan\DataRepository;
 
@@ -14,9 +15,9 @@ abstract class LecturePlanRenderer{
 	}
 	
 	/**
-	 * @return string
+	 * @return string|Promise<string>
 	 */
-	public abstract function renderContent(): string;
+	public abstract function renderContent(): string|Promise;
 	
 	/**
 	 * @return array

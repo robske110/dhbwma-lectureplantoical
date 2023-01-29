@@ -3,31 +3,59 @@ declare(strict_types=1);
 
 namespace robske_110\dhbwma\lectureplantoical\lectureplan;
 
+use Amp\Http\Client\Connection\UnlimitedConnectionPool;
+use Amp\Http\Client\HttpClient;
+use Amp\Http\Client\HttpClientBuilder;
+use Amp\Http\Client\Request;
+use Amp\Promise;
 use DateTimeImmutable;
 use DateTimeZone;
 use DOMDocument;
-use DOMNode;
 use DOMXPath;
+use Generator;
 use robske_110\dhbwma\lectureplantoical\lectureplan\representation\Lecture;
+use robske_110\Logger\Logger;
+use function Amp\call;
 
 abstract class MonthParser{
+	private static HttpClient $httpClient;
+	private static UnlimitedConnectionPool $pool;
+	
 	/**
 	 * Retrieves all the lectures for a given UId and a specified month
 	 * @param int $uId The UId for which all lectures shall be returned
 	 * @param int $uTime The Unix timestamp that specifies the month to fetch the lectures for
-	 * @return Lecture[] Contains the Lecture objects for the parsed month
+	 * @return Promise<Lecture[]> Contains the Lecture objects for the parsed month
 	 */
-	public static function getLectures(int $uId, int $uTime): array{
+	public static function getLectures(int $uId, int $uTime): Promise{
+		if(!isset(self::$httpClient)){
+			self::$pool = new UnlimitedConnectionPool;
+			self::$httpClient = (new HttpClientBuilder)->usingPool(self::$pool)->build();
+		}
+		
+		return call(self::_getLectures(...), $uId, $uTime);
+	}
+	
+	private static function _getLectures($uId, $uTime): Generator{
 		$dom = new DOMDocument();
 		$dom->strictErrorChecking = false;
 		// the gId is not needed to fetch the lecture plan for a course
-		$lecturePlan = file_get_contents("https://vorlesungsplan.dhbw-mannheim.de/index.php?action=view&uid=$uId&date=$uTime&view=month");
+		$response = yield self::$httpClient->request(new Request(
+			"https://vorlesungsplan.dhbw-mannheim.de/index.php?".http_build_query([
+				"action" => "view",
+				"uid" => $uId,
+				"date" => $uTime,
+				"view" => "month"
+			])
+		));
+		Logger::debug("connAttempts: ".self::$pool->getTotalConnectionAttempts()." streamREQs: ".self::$pool->getTotalStreamRequests()." openConns: ".self::$pool->getOpenConnectionCount());
+		
+		$lecturePlan = yield $response->getBody()->buffer();
 		@$dom->loadHTML($lecturePlan);
 		$xpath = new DomXPath($dom);
-		var_dump("https://vorlesungsplan.dhbw-mannheim.de/index.php?action=view&uid=$uId&date=$uTime&view=month");
+		
 		$content = $xpath->query("//div[@data-role='content']/div[@class='ui-grid-e']/a");
 		$days = [];
-		var_dump($content->count());
 		foreach($content->getIterator() as $item){
 			$days[] = $item->firstChild->firstChild->firstChild;
 		}
