@@ -100,8 +100,9 @@ class DataRepository{
 			$lectures = [];
 			foreach($monthsToFetch as [$monthToFetch, $year]){
 				$month = (new DateTime())->setDate($year, $monthToFetch, 0)->setTime(0,0);
-				$lectures[] = yield MonthParser::getLectures($courseUId, $month->getTimestamp());
+				$lectures[] = MonthParser::getLectures($courseUId, $month->getTimestamp());
 			}
+			$lectures = yield Promise\all($lectures);
 			return array_merge(...$lectures);
 		});
 	}
