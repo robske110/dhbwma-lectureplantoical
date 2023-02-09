@@ -136,36 +136,45 @@ class DataRepository{
 			$vEvents = $data->select("VEVENT");
 			
 			$lectures = yield $lectures;
+			$dateTimeZone = new DateTimeZone("Europe/Berlin");
+			/** @var Lecture[] $icsLectures ics lecture cache */
+			$icsLectures = [];
+			foreach($vEvents as $vEvent){
+				/** @var $vEvent VEvent */
+				
+				$dP = DateTimeParser::parseVCardDateTime($vEvent->select("DTSTART")[0]->getValue());
+				$dtStart = new DateTimeImmutable(
+					"$dP[year]-$dP[month]-$dP[date] $dP[hour]:$dP[minute]:$dP[second]",
+					$dateTimeZone
+				);
+				
+				$dP = DateTimeParser::parseVCardDateTime($vEvent->select("DTEND")[0]->getValue());
+				$dtEnd = new DateTimeImmutable(
+					"$dP[year]-$dP[month]-$dP[date] $dP[hour]:$dP[minute]:$dP[second]",
+					$dateTimeZone
+				);
+				$icsLectures[] = new Lecture(
+					trim($vEvent->select("SUMMARY")[0]->getValue()),
+					$dtStart, $dtEnd, null, trim($vEvent->select("LOCATION")[0]->getValue()),
+					$vEvent->select("UID")[0]->getValue()
+				);
+			}
 			foreach($lectures as $key => $lecture){
 				$eventId = null;
-				foreach($vEvents as $vEvent){
-					/** @var $vEvent VEvent */
-					
-					$dP = DateTimeParser::parseVCardDateTime($vEvent->select("DTSTART")[0]->getValue());
-					$dtStart = new DateTimeImmutable(
-						"$dP[year]-$dP[month]-$dP[date] $dP[hour]:$dP[minute]:$dP[second]",
-						new DateTimeZone("Europe/Berlin")
-					);
-					
-					$dP = DateTimeParser::parseVCardDateTime($vEvent->select("DTEND")[0]->getValue());
-					$dtEnd = new DateTimeImmutable(
-						"$dP[year]-$dP[month]-$dP[date] $dP[hour]:$dP[minute]:$dP[second]",
-						new DateTimeZone("Europe/Berlin")
-					);
-					
-					if($dtStart->getTimestamp() !== $lecture->start->getTimestamp()){
+				foreach($icsLectures as $icsLecture){
+					if($icsLecture->start->getTimestamp() !== $lecture->start->getTimestamp()){
 						continue;
 					}
-					if($dtEnd->getTimestamp() !== $lecture->end->getTimestamp()){
+					if($icsLecture->end->getTimestamp() !== $lecture->end->getTimestamp()){
 						continue;
 					}
-					if(trim($vEvent->select("SUMMARY")[0]->getValue()) !== trim($lecture->title)){
+					if($icsLecture->title !== trim($lecture->title)){
 						continue;
 					}
-					if(trim($vEvent->select("LOCATION")[0]->getValue()) !== trim($lecture->room ?? "")){
+					if($icsLecture->room !== trim($lecture->room ?? "")){
 						continue;
 					}
-					$eventId = $vEvent->select("UID")[0]->getValue();
+					$eventId = $icsLecture->id;
 					break;
 				}
 				if($eventId !== null){
