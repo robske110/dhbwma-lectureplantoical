@@ -15,6 +15,7 @@ class HttpClient{
 	private static \Amp\Http\Client\HttpClient $httpClient;
 	
 	const LECTURE_PLAN_BASE_URL = "https://vorlesungsplan.dhbw-mannheim.de/index.php";
+	const LECTURE_PLAN_ICAL_URL = "https://vorlesungsplan.dhbw-mannheim.de/ical.php";
 	
 	public static function httpClient(): \Amp\Http\Client\HttpClient{
 		if(!isset(self::$httpClient)){

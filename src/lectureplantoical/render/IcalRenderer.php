@@ -9,6 +9,7 @@ use Eluceo\iCal\Domain\Entity\Event;
 use Eluceo\iCal\Domain\ValueObject\DateTime;
 use Eluceo\iCal\Domain\ValueObject\Location;
 use Eluceo\iCal\Domain\ValueObject\TimeSpan;
+use Eluceo\iCal\Domain\ValueObject\UniqueIdentifier;
 use Eluceo\iCal\Presentation\Factory\CalendarFactory;
 use robske_110\dhbwma\lectureplantoical\lectureplan\representation\Lecture;
 use function Amp\call;
@@ -21,7 +22,7 @@ class IcalRenderer extends LecturePlanRenderer{
 			$events = [];
 			foreach($lectures as $lecture){
 				/** @var Lecture $lecture */
-				$event = (new Event())
+				$event = (new Event(new UniqueIdentifier($lecture->id)))
 					->setSummary($lecture->title)
 					->setOccurrence(
 						new TimeSpan(
