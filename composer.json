@@ -16,6 +16,7 @@
         "amphp/http-server-router": "^1.0",
         "ext-dom": "*",
         "ext-pcntl": "*",
-        "amphp/http-client": "^4.6"
+        "amphp/http-client": "^4.6",
+        "sabre/vobject": "^4.5"
     }
 }
