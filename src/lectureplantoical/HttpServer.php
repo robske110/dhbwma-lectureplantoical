@@ -83,8 +83,12 @@ class HttpServer{
 		$router = new Router;
 		$router->addRoute("GET", "/", new CallableRequestHandler(function(){
 			return new Response(
-				Status::OK, ["content-type" => "text/plain; charset=utf-8"],
-				"apiSRV/dhbwmalectureplantoical"
+				Status::OK, [
+					"Content-Type" => "text/plain; charset=utf-8", "Access-Control-Allow-Origin" => "*"
+				],
+				"apiSRV/dhbwmalectureplantoical/".VERSION
+			);
+		}));
 			);
 		}));
 		
