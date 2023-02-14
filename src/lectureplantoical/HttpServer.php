@@ -96,6 +96,10 @@ class HttpServer{
 			return yield $this->renderCourseCalendarRequest($request, IcalRenderer::class);
 		}));
 		
+		$router->addRoute("GET", "/{course}/json", new CallableRequestHandler(function(Request $request){
+			return yield $this->renderCourseCalendarRequest($request, JsonRenderer::class);
+		}));
+		
 		$router->addRoute("GET", "/{course}/txt", new CallableRequestHandler(function(Request $request){
 			return yield $this->renderCourseCalendarRequest($request, TxtRenderer::class);
 		}));
