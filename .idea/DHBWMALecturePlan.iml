@@ -33,6 +33,9 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/amphp/http-server-router" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/nikic/fast-route" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/amphp/http-client" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sabre/uri" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sabre/vobject" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sabre/xml" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
