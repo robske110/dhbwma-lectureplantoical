@@ -16,6 +16,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
 use robske_110\dhbwma\lectureplantoical\render\IcalRenderer;
+use robske_110\dhbwma\lectureplantoical\render\JsonRenderer;
 use robske_110\dhbwma\lectureplantoical\render\TxtRenderer;
 use robske_110\Logger\PSRLogger;
 use function Amp\call;
@@ -89,6 +90,13 @@ class HttpServer{
 				"apiSRV/dhbwmalectureplantoical/".VERSION
 			);
 		}));
+		
+		$router->addRoute("GET", "/list", new CallableRequestHandler(function(){
+			return new Response(
+				Status::OK, [
+					"Content-Type" => "application/json; charset=utf-8", "Access-Control-Allow-Origin" => "*"
+				],
+				json_encode($this->main->getLecturePlan()->getFullCourseList())
 			);
 		}));
 		
