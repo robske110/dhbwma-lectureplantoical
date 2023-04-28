@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace robske_110\dhbwma\lectureplantoical\render;
 
 use Amp\Promise;
+use DateTimeZone;
 use Eluceo\iCal\Domain\Entity\Calendar;
 use Eluceo\iCal\Domain\Entity\Event;
+use Eluceo\iCal\Domain\Entity\TimeZone;
 use Eluceo\iCal\Domain\ValueObject\DateTime;
 use Eluceo\iCal\Domain\ValueObject\Location;
 use Eluceo\iCal\Domain\ValueObject\TimeSpan;
@@ -18,6 +20,9 @@ class IcalRenderer extends LecturePlanRenderer{
 	public function renderContent(): Promise{
 		return call(function(){
 			$lectures = yield $this->lecturePlan->getLecturesForCourseBetween($this->courseName, $this->start, $this->end);
+			
+			$minDateTime = null;
+			$maxDateTime = null;
 			
 			$events = [];
 			foreach($lectures as $lecture){
@@ -37,11 +42,20 @@ class IcalRenderer extends LecturePlanRenderer{
 					$event->setLocation(new Location($lecture->room));
 				}
 				$events[] = $event;
+				if($minDateTime === null || $lecture->start < $minDateTime){
+					$minDateTime = $lecture->start;
+				}
+				if($maxDateTime === null || $lecture->end > $maxDateTime){
+					$maxDateTime = $lecture->end;
+				}
 			}
 			
 			
 			$calendar = new Calendar($events);
-			$calendar->setProductIdentifier("-//r110//dhbwmalectureplantoical//V0//DE");
+			$calendar->addTimeZone(TimeZone::createFromPhpDateTimeZone(
+				new DateTimeZone("Europe/Berlin"), $minDateTime, $maxDateTime
+			));
+			$calendar->setProductIdentifier("-//r110//dhbwmalectureplantoical//V1//DE");
 			
 			$componentFactory = new CalendarFactory();
 			$calendarComponent = $componentFactory->createCalendar($calendar);
