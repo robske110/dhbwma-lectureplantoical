@@ -30,6 +30,7 @@ class IcalRenderer extends LecturePlanRenderer{
 				$event = (new Event(new UniqueIdentifier($lecture->id)))
 					->setSummary($lecture->title)
 					->setOccurrence(
+						/*new SingleDay(new Date($lecture->start))*/
 						new TimeSpan(
 							new DateTime($lecture->start, true),
 							new DateTime($lecture->end, true)
@@ -52,9 +53,11 @@ class IcalRenderer extends LecturePlanRenderer{
 			
 			
 			$calendar = new Calendar($events);
-			$calendar->addTimeZone(TimeZone::createFromPhpDateTimeZone(
-				new DateTimeZone("Europe/Berlin"), $minDateTime, $maxDateTime
-			));
+			if(!empty($events)){
+				$calendar->addTimeZone(TimeZone::createFromPhpDateTimeZone(
+					new DateTimeZone("Europe/Berlin"), $minDateTime, $maxDateTime
+				));
+			}
 			$calendar->setProductIdentifier("-//r110//dhbwmalectureplantoical//V1//DE");
 			
 			$componentFactory = new CalendarFactory();
