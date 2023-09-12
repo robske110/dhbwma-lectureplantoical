@@ -40,7 +40,8 @@ abstract class UIdParser{
 			$prefix = $year->firstChild->firstChild->nodeValue; // prefix f.e. "TINF20"
 	        // Append the suffix to the prefix (=COURSE_ID) and assign the UId to it
 			foreach($xPath->query("div/a", $year) as $course){
-				$courses[$prefix.$course->firstChild->nodeValue] =
+				// replace slashes in course names with dashes for URL compatibility
+				$courses[str_replace("/", "-", $prefix.$course->firstChild->nodeValue)] =
 					(int) substr($course->attributes->getNamedItem("href")->nodeValue,-7);
 			}
         }
