@@ -17,6 +17,7 @@
         "ext-dom": "*",
         "ext-pcntl": "*",
         "amphp/http-client": "^4.6",
-        "sabre/vobject": "^4.5"
+        "sabre/vobject": "^4.5",
+        "ext-curl": "*"
     }
 }
