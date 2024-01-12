@@ -19,6 +19,7 @@ use robske_110\dhbwma\lectureplantoical\render\IcalRenderer;
 use robske_110\dhbwma\lectureplantoical\render\JsonRenderer;
 use robske_110\dhbwma\lectureplantoical\render\TxtRenderer;
 use robske_110\Logger\PSRLogger;
+use RuntimeException;
 use function Amp\call;
 
 class HttpServer{
@@ -70,11 +71,23 @@ class HttpServer{
 				}
 			}
 			
-			return new Response(
-				Status::OK,
-				$renderer->getHeaders() + ["Access-Control-Allow-Origin" => "*"],
-				yield $renderer->renderContent()
-			);
+			try{
+				return new Response(
+					Status::OK,
+					$renderer->getHeaders() + ["Access-Control-Allow-Origin" => "*"],
+					yield $renderer->renderContent()
+				);
+			}catch(RuntimeException $e){
+				if(str_contains($e->getMessage(), "Could not find course")){
+					return new Response(
+						Status::NOT_FOUND,
+						["Access-Control-Allow-Origin" => "*"],
+						$e->getMessage()
+					);
+				}else{
+					throw $e;
+				}
+			}
 		});
 	}
 	
